@@ -1,16 +1,19 @@
 import Phaser from "phaser";
 import { createPlayerAnimations } from "./utils/animation";
+import { Player } from "./utils/player";
 
 export class HouseScene extends Phaser.Scene {
-    constructor() {
+    constructor(sharedData) {
         super('HouseScene');
-      
+        this.sharedData = sharedData
     }
 
     preload() {
         this.load.image('houseMap', 'assets/houseSet.png');
         this.load.tilemapTiledJSON('housekey', 'assets/House.json');
         this.load.spritesheet('player', 'assets/player.png', { frameWidth: 48, frameHeight: 48 });
+        this.load.image('textBox', 'assets/textBox.png');
+        this.load.image('asleep', 'assets/asleep.png')
     }
 
     create() {
@@ -29,8 +32,11 @@ export class HouseScene extends Phaser.Scene {
         this.frontWallTiles = map.createLayer('FrontWall', tileset, xOffset,yOffset);
         this.frontDoorTiles = map.createLayer('FrontDoor', tileset, xOffset,yOffset);
         this.FurnitureTiles = map.createLayer('Furniture', tileset, xOffset,yOffset);
-        this.player = this.physics.add.sprite(xOffset  + 127 ,yOffset + 200 , 'player');
-        this.player.setBodySize(2,2)
+        this.bedTile = map.createLayer('bed', tileset, xOffset, yOffset);
+        this.textBox = this.add.image(this.cameras.main.centerX, this.cameras.main.height - 250, 'textBox').setVisible(false);
+        this.text = this.add.text(this.cameras.main.centerX, this.cameras.main.height - 250, '', { fontSize: '16px', fill: '#000' }).setOrigin(0.5).setVisible(false);
+        this.bedImage = this.add.image(0 , 0,'asleep').setVisible(false)
+        this.player = new Player(this, xOffset + 130, yOffset + 200, this.sharedData);
        
         this.physics.add.collider(this.player, this.FurnitureTiles);
         this.FurnitureTiles.setCollisionByExclusion([-1])
@@ -40,39 +46,19 @@ export class HouseScene extends Phaser.Scene {
         this.backWallTiles.setCollisionByExclusion([-1])
         this.physics.add.collider(this.player, this.frontWallTiles);
         this.frontWallTiles.setCollisionByExclusion([-1])
+        this.physics.add.collider(this.player, this.bedTile, this.sleep, null, this)
+        this.bedTile.setCollisionByExclusion([-1])
        
       
 
         createPlayerAnimations(this.anims)   
-
+        this.KeyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    
     }
 
     update() {
         const cursors = this.input.keyboard.createCursorKeys();
-        const speed = 50;
-
-        // Assume the player is not moving unless one of the movement keys is pressed
-        this.player.setVelocity(0);
-
-        if (cursors.down.isDown) {
-            this.player.setVelocityY(speed);
-            this.player.anims.play('walk-down', true);
-        } else if (cursors.up.isDown) {
-            this.player.setVelocityY(-speed);
-            this.player.anims.play('walk-up', true);
-        } 
-
-        if (cursors.right.isDown) {
-            this.player.setVelocityX(speed);
-            this.player.anims.play('walk-right', true);
-        } else if (cursors.left.isDown) {
-            this.player.setVelocityX(-speed);
-            this.player.anims.play('walk-left', true);
-        } 
-
-        if (!(cursors.up.isDown || cursors.down.isDown || cursors.left.isDown || cursors.right.isDown)) {
-            this.player.anims.stop();
-        }
+        this.player.update(cursors)
        
         const tile = this.frontDoorTiles.getTileAtWorldXY(this.player.x, this.player.y);
         if (tile) {
@@ -86,5 +72,27 @@ export class HouseScene extends Phaser.Scene {
             this.scene.start('Default')
         }
     }
-   
+     sleep() {
+        if(Phaser.Input.Keyboard.JustDown(this.KeyE)){
+            this.text.text = "Sleeping...";
+            this.text.setVisible(true);
+            this.textBox.setVisible(true);
+            this.player.setVisible(false)
+            this.sharedData.isSleeping = true;
+            this.bedTile.setVisible(false)
+            this.bedImage.setVisible(true)
+            this.bedImage.setPosition(this.bedTile.x + 40, this.bedTile.y  + 64)
+    
+            // Set a delay to hide textBox and text after 3 seconds
+            this.time.delayedCall(3000, () => {
+                this.text.setVisible(false);
+                this.textBox.setVisible(false);
+                this.player.setVisible(true)
+                this.sharedData.isSleeping = false;
+                this.bedImage.setVisible(false)
+                this.bedTile.setVisible(true)
+            });
+        }
+    
+   }
 }

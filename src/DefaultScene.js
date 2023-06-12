@@ -1,11 +1,16 @@
 import Phaser from "phaser";
 import { createPlayerAnimations } from "./utils/animation";
+import { Player } from "./utils/player";
+
 
 export class Default extends Phaser.Scene {
-    constructor() {
+    constructor(shareData) {
         super("Default");
         this.startingPosition = { x: 120, y: 90 };
         this.playerInventory = []
+        this.shareData = shareData
+       
+       
     }
 
     preload() {
@@ -38,59 +43,61 @@ export class Default extends Phaser.Scene {
         this.treesTiles = map.createLayer('trees', tileset, xOffset,yOffset);
         this.objectsTiles = map.createLayer('objects', tileset, xOffset,yOffset);
         this.houseTiles = map.createLayer('house',tileset, xOffset, yOffset)
-        this.player = this.physics.add.sprite(xOffset + this.startingPosition.x,yOffset + this.startingPosition.y, 'player');
-        this.player.setBodySize(2,2)
-        this.physics.add.collider(this.player, this.treesTiles);
+        this.nextMapTile = map.createLayer('nextMap', tileset, xOffset, yOffset)
+      
+        
+      
+        this.player = new Player(this, xOffset + this.startingPosition.x, yOffset + this.startingPosition.y, this.shareData);
+        this.health = this.player.health
+        this.healthbarBackground = this.add.rectangle(10,10,200, 20, 0xFFFFFF).setOrigin(0,0);
+        this.healthBar = this.add.rectangle(10,10,200,20, 0xFF0000).setOrigin(0,0);
+        this.staminabarBackground = this.add.rectangle(10,40,200, 20, 0xFFFFFF).setOrigin(0,0);
+        this.staminaBar = this.add.rectangle(10,40,200,20, 0x00FF00).setOrigin(0,0);
+        this.physics.add.collider(this.player, this.treesTiles, this.reduceHealth);
         this.treesTiles.setCollisionByExclusion([-1])
         this.physics.add.collider(this.player, this.landTiles);
         this.landTiles.setCollisionByExclusion([-1])
-        this.physics.add.collider(this.player, this.waterTiles);
+        this.physics.add.collider(this.player, this.waterTiles ,this.handlePlayerDamage, null, this);
         this.waterTiles.setCollisionByExclusion([-1])
         this.physics.add.collider(this.player, this.objectsTiles);
         this.objectsTiles.setCollisionByExclusion([-1])
-       
- 
         this.items = this.physics.add.group();
 
 
         let item = this.physics.add.sprite(xOffset + 300, yOffset + 140, 'carrot');
         this.items.add(item);
-
-
+      
+        
+        
         this.physics.add.overlap(this.player, this.items, this.pickUpItem, null, this);
-        this.inventoryText = this.add.text(16, 16, 'Inventory: ', { fontSize: '32px', fill: '#000' });
+        
+       // this.inventoryText = this.add.text(300, 200, 'Inventory: ', { fontSize: '32px', fill: '#000' });
         createPlayerAnimations(this.anims)
-       
+       this.KeyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     }
 
     update() {
-        const cursors = this.input.keyboard.createCursorKeys();
-        const speed = 50;
+        this.player.stamina += 0.2
 
-        // Assume the player is not moving unless one of the movement keys is pressed
-        this.player.setVelocity(0);
-
-        if (cursors.down.isDown) {
-            this.player.setVelocityY(speed);
-            this.player.anims.play('walk-down', true);
-        } else if (cursors.up.isDown) {
-            this.player.setVelocityY(-speed);
-            this.player.anims.play('walk-up', true);
-        } 
-
-        if (cursors.right.isDown) {
-            this.player.setVelocityX(speed);
-            this.player.anims.play('walk-right', true);
-        } else if (cursors.left.isDown) {
-            this.player.setVelocityX(-speed);
-            this.player.anims.play('walk-left', true);
-        } 
-
-        if (!(cursors.up.isDown || cursors.down.isDown || cursors.left.isDown || cursors.right.isDown)) {
-            this.player.anims.stop();
+        if(this.KeyR.isDown && this.player.stamina > 0){
+            this.shareData.isRunning = true;
         }
+        if(this.KeyR.isUp){
+            this.shareData.isRunning = false;
+        }
+        const cursors = this.input.keyboard.createCursorKeys();
+        this.player.update(cursors)
+        this.player.health =  Phaser.Math.Clamp(this.player.health, 0, 100);
+        this.health = this.player.health;
+       this. healthBar.width = this.health * 2
+       this.player.stamina =  Phaser.Math.Clamp(this.player.stamina, 0, 100);
+        this.stamina = this.player.stamina;
+       this. staminaBar.width = this.stamina * 2
+       
+       
 
         const tile = this.houseTiles.getTileAtWorldXY(this.player.x, this.player.y);
+
         if (tile) {
             this.enteredHouse(this.player, tile);
         }
@@ -98,8 +105,18 @@ export class Default extends Phaser.Scene {
     if (boatTile) {
         this.enteredBoat(this.player, boatTile);
     }
+        const tile2 = this.nextMapTile.getTileAtWorldXY(this.player.x, this.player.y);
+        if(tile2){
+            this.changeMap(this.player, tile2)
+        }
 
-}
+}   
+    changeMap(player, tile){
+        if(tile.layer.name === 'nextMap'){
+            this.scene.start('World')
+           
+        }
+    }
 
     enteredHouse(player, tile) {
         if (tile.layer.name === 'house') {
@@ -114,12 +131,40 @@ export class Default extends Phaser.Scene {
 
         }
     }
-    pickUpItem(player, item) {
+    pickUpItem(playerInventory, item) {
         this.playerInventory.push(item);
         item.disableBody(true, true);
         this.updateInventoryDisplay();
+       
+        
     }
     updateInventoryDisplay() {
         this.inventoryText.setText('Inventory: ' + this.playerInventory.join(', '));
+    }
+    handlePlayerheal(player) {
+        // Reduce player's health
+        player.health += 30; // Reduce player's health by 10 or any value you want
+        this.health = this.player.health; // Update the health property in your class
+        
+        // Now you can update the health bar
+        this.healthBar.width = this.health * 2;
+        
+        // Here, you can decide what to do when the player's health reaches zero
+        if (player.health <= 0) {
+            // handle player death
+        }
+    }
+    handlePlayerDamage(player) {
+        // Reduce player's health
+        player.health -= 2; // Reduce player's health by 10 or any value you want
+        this.health = this.player.health; // Update the health property in your class
+        
+        // Now you can update the health bar
+        this.healthBar.width = this.health * 2;
+        
+        // Here, you can decide what to do when the player's health reaches zero
+        if (player.health <= 0) {
+            // handle player death
+        }
     }
 }
