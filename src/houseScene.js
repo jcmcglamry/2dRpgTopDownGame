@@ -1,11 +1,13 @@
 import Phaser from "phaser";
 import { createPlayerAnimations } from "./utils/animation";
 import { Player } from "./utils/player";
+import { RunController } from "./utils/runController";
+import { Status } from "./utils/status";
 
 export class HouseScene extends Phaser.Scene {
-    constructor(sharedData) {
+    constructor(shareData) {
         super('HouseScene');
-        this.sharedData = sharedData
+        this.shareData = shareData
     }
 
     preload() {
@@ -36,7 +38,7 @@ export class HouseScene extends Phaser.Scene {
         this.textBox = this.add.image(this.cameras.main.centerX, this.cameras.main.height - 250, 'textBox').setVisible(false);
         this.text = this.add.text(this.cameras.main.centerX, this.cameras.main.height - 250, '', { fontSize: '16px', fill: '#000' }).setOrigin(0.5).setVisible(false);
         this.bedImage = this.add.image(0 , 0,'asleep').setVisible(false)
-        this.player = new Player(this, xOffset + 130, yOffset + 200, this.sharedData);
+        this.player = new Player(this, xOffset + 130, yOffset + 200, this.shareData);
        
         this.physics.add.collider(this.player, this.FurnitureTiles);
         this.FurnitureTiles.setCollisionByExclusion([-1])
@@ -51,7 +53,13 @@ export class HouseScene extends Phaser.Scene {
        
       
 
-        createPlayerAnimations(this.anims)   
+        createPlayerAnimations(this.anims) 
+        // this.inventoryText = this.add.text(10, 450, 'Inventory: ', { fontSize: '12px', fill: '#FFFFFF'});
+        // this.updateInventoryDisplay()
+        this.status = new Status(this, this.shareData)
+        this.runController = new RunController(this, this.player, this.shareData);
+       
+
         this.KeyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     
     }
@@ -59,6 +67,9 @@ export class HouseScene extends Phaser.Scene {
     update() {
         const cursors = this.input.keyboard.createCursorKeys();
         this.player.update(cursors)
+        this.runController.update();
+        this.status.update();
+        this.shareData.isRunning = false;
        
         const tile = this.frontDoorTiles.getTileAtWorldXY(this.player.x, this.player.y);
         if (tile) {
@@ -69,7 +80,9 @@ export class HouseScene extends Phaser.Scene {
 
     leavingHouse(player, tile) {
         if (tile.layer.name === 'FrontDoor') {
+            this.shareData.stamina = 100;
             this.scene.start('Default')
+            
         }
     }
      sleep() {
@@ -78,7 +91,7 @@ export class HouseScene extends Phaser.Scene {
             this.text.setVisible(true);
             this.textBox.setVisible(true);
             this.player.setVisible(false)
-            this.sharedData.isSleeping = true;
+            this.shareData.isSleeping = true;
             this.bedTile.setVisible(false)
             this.bedImage.setVisible(true)
             this.bedImage.setPosition(this.bedTile.x + 40, this.bedTile.y  + 64)
@@ -88,9 +101,10 @@ export class HouseScene extends Phaser.Scene {
                 this.text.setVisible(false);
                 this.textBox.setVisible(false);
                 this.player.setVisible(true)
-                this.sharedData.isSleeping = false;
+                this.shareData.isSleeping = false;
                 this.bedImage.setVisible(false)
                 this.bedTile.setVisible(true)
+                this.shareData.health = 100;
             });
         }
     

@@ -1,0 +1,29 @@
+[
+    {
+        "name": "Sword",
+        "description": "A sharp blade, perfect for close combat.",
+        "attackPower": 50,
+        "defensePower": 10,
+        "type": "weapon"
+    },
+    {
+        "name": "Shield",
+        "description": "A sturdy shield, protects you from enemy attacks.",
+        "attackPower": 0,
+        "defensePower": 50,
+        "type": "armor"
+    },
+    {
+        "name": "Potion",
+        "description": "Heals your wounds and restores health.",
+        "healPower": 100,
+        "type": "consumable"
+    },
+    {
+        "name": "carrot",
+        "description": "A tasty treat to improve how you feel",
+        "healPower":20,
+        "type": "consumable",
+        "imagePath": "assets/carrot.png"
+    }
+]

@@ -1,13 +1,16 @@
 import Phaser from "phaser";
 import { createPlayerAnimations } from "./utils/animation";
 import { Player } from "./utils/player";
+import { Status } from "./utils/status";
+import { RunController } from "./utils/runController";
+import { updateInventoryDisplay } from "./utils/inventoryUpdate";
+import { InventoryManager } from "./utils/inventoryManger";
 
 
 export class Default extends Phaser.Scene {
     constructor(shareData) {
         super("Default");
         this.startingPosition = { x: 120, y: 90 };
-        this.playerInventory = []
         this.shareData = shareData
        
        
@@ -17,7 +20,17 @@ export class Default extends Phaser.Scene {
         this.load.image('tiledImage', 'assets/MasterSimple.png');
         this.load.tilemapTiledJSON('tilemap', 'assets/map.json');
         this.load.spritesheet('player', 'assets/player.png', { frameWidth: 48, frameHeight: 48 });
-        this.load.image('carrot', 'assets/carrot.png')
+    
+        this.load.json('items', 'assets/items.json')
+        this.load.once('filecomplete-json-items', () => {
+            let itemsData = this.cache.json.get('items');
+            
+            itemsData.forEach(item => {
+                this.load.image(item.name, item.imagePath);
+            });
+            
+            this.load.start();
+        });
     }
 
     create() {
@@ -49,50 +62,38 @@ export class Default extends Phaser.Scene {
       
         this.player = new Player(this, xOffset + this.startingPosition.x, yOffset + this.startingPosition.y, this.shareData);
         this.health = this.player.health
-        this.healthbarBackground = this.add.rectangle(10,10,200, 20, 0xFFFFFF).setOrigin(0,0);
-        this.healthBar = this.add.rectangle(10,10,200,20, 0xFF0000).setOrigin(0,0);
-        this.staminabarBackground = this.add.rectangle(10,40,200, 20, 0xFFFFFF).setOrigin(0,0);
-        this.staminaBar = this.add.rectangle(10,40,200,20, 0x00FF00).setOrigin(0,0);
-        this.physics.add.collider(this.player, this.treesTiles, this.reduceHealth);
+        this.physics.add.collider(this.player, this.treesTiles);
         this.treesTiles.setCollisionByExclusion([-1])
         this.physics.add.collider(this.player, this.landTiles);
         this.landTiles.setCollisionByExclusion([-1])
-        this.physics.add.collider(this.player, this.waterTiles ,this.handlePlayerDamage, null, this);
+        this.physics.add.collider(this.player, this.waterTiles);
         this.waterTiles.setCollisionByExclusion([-1])
         this.physics.add.collider(this.player, this.objectsTiles);
         this.objectsTiles.setCollisionByExclusion([-1])
-        this.items = this.physics.add.group();
+
+       
+        
+       
+        
+       
+        this.updateInventoryDisplay = new updateInventoryDisplay(this, this.player, this.shareData);
+        this.inventoryManager = new InventoryManager(this, this.player, this.shareData, this.updateInventoryDisplay);
+        this.inventoryManager.create()
 
 
-        let item = this.physics.add.sprite(xOffset + 300, yOffset + 140, 'carrot');
-        this.items.add(item);
-      
-        
-        
-        this.physics.add.overlap(this.player, this.items, this.pickUpItem, null, this);
-        
-       // this.inventoryText = this.add.text(300, 200, 'Inventory: ', { fontSize: '32px', fill: '#000' });
+       this.status = new Status(this, this.shareData)
         createPlayerAnimations(this.anims)
-       this.KeyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+        this.runController = new RunController(this, this.player, this.shareData);
+        this.physics.add.overlap(this.player, this.items, this.inventoryManager.pickUpItem, null, this);
+        
+        this.updateInventoryDisplay.update()
     }
 
     update() {
-        this.player.stamina += 0.2
-
-        if(this.KeyR.isDown && this.player.stamina > 0){
-            this.shareData.isRunning = true;
-        }
-        if(this.KeyR.isUp){
-            this.shareData.isRunning = false;
-        }
         const cursors = this.input.keyboard.createCursorKeys();
         this.player.update(cursors)
-        this.player.health =  Phaser.Math.Clamp(this.player.health, 0, 100);
-        this.health = this.player.health;
-       this. healthBar.width = this.health * 2
-       this.player.stamina =  Phaser.Math.Clamp(this.player.stamina, 0, 100);
-        this.stamina = this.player.stamina;
-       this. staminaBar.width = this.stamina * 2
+        this.runController.update();
+        this.status.update();
        
        
 
@@ -113,8 +114,8 @@ export class Default extends Phaser.Scene {
 }   
     changeMap(player, tile){
         if(tile.layer.name === 'nextMap'){
-            this.scene.start('World')
-           
+            this.scene.start('Cave', this.shareData)
+           this.startingPosition = {x: 25, y: 180}
         }
     }
 
@@ -131,40 +132,6 @@ export class Default extends Phaser.Scene {
 
         }
     }
-    pickUpItem(playerInventory, item) {
-        this.playerInventory.push(item);
-        item.disableBody(true, true);
-        this.updateInventoryDisplay();
-       
-        
-    }
-    updateInventoryDisplay() {
-        this.inventoryText.setText('Inventory: ' + this.playerInventory.join(', '));
-    }
-    handlePlayerheal(player) {
-        // Reduce player's health
-        player.health += 30; // Reduce player's health by 10 or any value you want
-        this.health = this.player.health; // Update the health property in your class
-        
-        // Now you can update the health bar
-        this.healthBar.width = this.health * 2;
-        
-        // Here, you can decide what to do when the player's health reaches zero
-        if (player.health <= 0) {
-            // handle player death
-        }
-    }
-    handlePlayerDamage(player) {
-        // Reduce player's health
-        player.health -= 2; // Reduce player's health by 10 or any value you want
-        this.health = this.player.health; // Update the health property in your class
-        
-        // Now you can update the health bar
-        this.healthBar.width = this.health * 2;
-        
-        // Here, you can decide what to do when the player's health reaches zero
-        if (player.health <= 0) {
-            // handle player death
-        }
-    }
+   
+  
 }

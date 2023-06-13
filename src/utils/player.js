@@ -7,7 +7,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.health = 100;
         this.stamina = 100;
         this.scene = scene;
-        this.sharedData = shareData
+        this.inventory = []
+        this.shareData = shareData
 
         
    
@@ -19,16 +20,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    
     update(cursors) {
         let speed = 50;
-        this.health =  Phaser.Math.Clamp(this.health, 0, 100);
-       if(this.sharedData.isRunning === true){
-         speed = 100
-         this.stamina -=1
-         if(this.stamina<=0){
+       if(this.shareData.isRunning === true){
+         speed = 100;
+         if(this.shareData.stamina <= 0){
             speed = 50
          }
-    }
+        }
         this.setVelocity(0);
-      if(this.sharedData.isSleeping === false){
+      if(this.shareData.isSleeping === false){
         if (cursors.down.isDown) {
             this.setVelocityY(speed);
             this.anims.play('walk-down', true);
@@ -58,4 +57,5 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     handlePlayerDamage() {
         this.health -= 2;
     }
+    
 }
