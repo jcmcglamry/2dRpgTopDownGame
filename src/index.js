@@ -11,6 +11,9 @@ const shareData = {
     inventory: new Map(),
     health: 100,
     stamina:100,
+    isAvailable: true,
+    player: {x: 0,y: 0},
+    init: false,
 }
 
 const config = {

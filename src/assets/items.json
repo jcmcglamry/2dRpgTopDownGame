@@ -4,20 +4,23 @@
         "description": "A sharp blade, perfect for close combat.",
         "attackPower": 50,
         "defensePower": 10,
-        "type": "weapon"
+        "type": "weapon",
+        "imagePath": "assets/Sword.png"
     },
     {
         "name": "Shield",
         "description": "A sturdy shield, protects you from enemy attacks.",
         "attackPower": 0,
         "defensePower": 50,
-        "type": "armor"
+        "type": "armor",
+        "imagePath": "assets/Shield.png"
     },
     {
-        "name": "Potion",
+        "name": "potion",
         "description": "Heals your wounds and restores health.",
         "healPower": 100,
-        "type": "consumable"
+        "type": "consumable",
+        "imagePath": "assets/potion.png"
     },
     {
         "name": "carrot",

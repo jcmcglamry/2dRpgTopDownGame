@@ -14,9 +14,14 @@ export class Status extends Phaser.GameObjects.Container {
         this.staminaBar = this.scene.add.rectangle(10, 40, this.shareData.stamina * 2, 20, 0x00FF00).setOrigin(0, 0);
 
         this.add([this.healthBarBackground, this.healthBar, this.staminabarBackground, this.staminaBar]);
-    }
 
+        
+        
+    }
+    
     update() {
+       
+        this.setPosition(this.scene.player.x- 400, this.scene.player.y + 200)
         this.shareData.health = Phaser.Math.Clamp(this.shareData.health, 0, 100);
         this.shareData.stamina = Phaser.Math.Clamp(this.shareData.stamina, 0, 100);
         this.healthBar.width = this.shareData.health * 2;

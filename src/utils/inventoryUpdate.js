@@ -1,15 +1,44 @@
 export class updateInventoryDisplay {
-    constructor(scene, shareData) {
+    constructor(scene, shareData, initialX, initialY) {
         this.scene = scene;
         this.shareData = shareData;
-        this.inventoryText = this.scene.add.text(10, 450, 'Inventory: ', { fontSize: '12px', fill: '#FFFFFF'});
+        
+        // Create the background for the inventory display at the specified coordinates
+        this.inventoryBackground = this.scene.add.sprite(initialX, initialY, 'inventoryBackground');
+        
+        // Use a group to contain all item images and quantity text objects
+        this.inventoryGroup = this.scene.add.group();
+        
+        
     }
 
     update() {
-        let inventoryString = 'Inventory:\n';
-        this.shareData.inventory.forEach((count, item) => {
-            inventoryString += item + ': ' + count + '\n';
+       
+    
+       
+        this.inventoryBackground.setPosition(this.scene.player.x + 300, this.scene.player.y + 200);
+       
+    
+      
+        let x = this.scene.player.x + 300;  
+        let y = this.scene.player.y + 200;  
+    
+       
+        this.inventoryGroup.clear(true, true);
+    
+       
+        this.shareData.inventory.forEach((itemData, itemName) => {
+          
+            let itemImage = this.scene.add.sprite(x, y, itemName);
+            
+            this.inventoryGroup.add(itemImage);
+    
+          
+            let quantityText = this.scene.add.text(x - 30, y, `x${itemData.count}`, { fontSize: '12px', fill: '#FFFFFF' });
+           
+            this.inventoryGroup.add(quantityText);
+    
+            x += 70;  
         });
-        this.inventoryText.setText(inventoryString);
     }
 }

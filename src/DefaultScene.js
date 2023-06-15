@@ -10,7 +10,7 @@ import { InventoryManager } from "./utils/inventoryManger";
 export class Default extends Phaser.Scene {
     constructor(shareData) {
         super("Default");
-        this.startingPosition = { x: 120, y: 90 };
+        this.startingPosition = { x: 200, y: 180 };
         this.shareData = shareData
        
        
@@ -24,7 +24,8 @@ export class Default extends Phaser.Scene {
         this.load.json('items', 'assets/items.json')
         this.load.once('filecomplete-json-items', () => {
             let itemsData = this.cache.json.get('items');
-            
+            this.load.image('inventoryBackground', 'assets/textBox2.png');
+
             itemsData.forEach(item => {
                 this.load.image(item.name, item.imagePath);
             });
@@ -76,24 +77,37 @@ export class Default extends Phaser.Scene {
        
         
        
-        this.updateInventoryDisplay = new updateInventoryDisplay(this, this.player, this.shareData);
+        this.updateInventoryDisplay = new updateInventoryDisplay(this, this.shareData, 80, 510);
         this.inventoryManager = new InventoryManager(this, this.player, this.shareData, this.updateInventoryDisplay);
-        this.inventoryManager.create()
+        this.inventoryManager.createItem('carrot', 450,300)
 
+
+        if(this.shareData.isAvailable === true){
+        this.inventoryManager.createItem('Sword', 430,300 )
+        }
 
        this.status = new Status(this, this.shareData)
         createPlayerAnimations(this.anims)
         this.runController = new RunController(this, this.player, this.shareData);
         this.physics.add.overlap(this.player, this.items, this.inventoryManager.pickUpItem, null, this);
-        
+        if(this.shareData.init = false)
+        {
+        this.shareData.player.x = this.player.x - 200;
+        this.shareData.player.y = this.player.y + 280;
         this.updateInventoryDisplay.update()
+       
+        }
+        this.cameras.main.startFollow(this.player);
     }
 
     update() {
+        this.shareData.player.x = this.player.x;
+        this.shareData.player.y = this.player.y;
         const cursors = this.input.keyboard.createCursorKeys();
         this.player.update(cursors)
         this.runController.update();
         this.status.update();
+        this.updateInventoryDisplay.update()
        
        
 
