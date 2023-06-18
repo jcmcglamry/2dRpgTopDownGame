@@ -14,9 +14,7 @@ export class InventoryManager {
         
     }
 
-    create() {
-      
-    }
+    
 
     pickUpItem(player, item) {
         // Find the data for the item that was picked up
@@ -45,9 +43,10 @@ export class InventoryManager {
         if (itemData) {
             let itemSprite = this.scene.physics.add.sprite(x, y, itemData.name);
             itemSprite.name = itemData.name;
-            itemSprite.setInteractive();
+
             this.scene.physics.add.overlap(this.player, itemSprite, this.pickUpItem, null, this);
         }
 
 }
+   
 }

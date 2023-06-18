@@ -28,6 +28,7 @@ export class World extends Phaser.Scene{
         });
     }
     create(){
+        
         const map = this.make.tilemap({key:'tilemap2'});
         const tileset = map.addTilesetImage('MasterSimple', 'tiledImage2');
         const mapWidthInPixels = map.width * map.tileWidth;
@@ -42,7 +43,7 @@ export class World extends Phaser.Scene{
         createPlayerAnimations(this.anims)
         this.cameras.main.startFollow(this.player);
         
-        this.updateInventoryDisplay = new updateInventoryDisplay(this, this.shareData);
+        this.updateInventoryDisplay = new updateInventoryDisplay(this, this.player, this.shareData);
         this.inventoryManager = new InventoryManager(this, this.player, this.shareData, this.updateInventoryDisplay);
         this.status = new Status(this, this.shareData) 
         this.runController = new RunController(this, this.player, this.shareData);
@@ -53,7 +54,7 @@ export class World extends Phaser.Scene{
        this.updateInventoryDisplay.update()
        console.log(this.updateInventoryDisplay.inventoryBackground.x, this.updateInventoryDisplay.inventoryBackground.y)
        console.log(this.shareData.player.x, this.shareData.player.y)
-
+       this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     }
     update(){
         this.updateInventoryDisplay.update()
@@ -63,5 +64,8 @@ export class World extends Phaser.Scene{
         this.player.update(cursors)
         this.runController.update();
         this.status.update();
+        if (this.keySpace.isDown) {
+            this.player.anims.play('attack-' + this.player.lastDirection, true);
+        }
     }
 }

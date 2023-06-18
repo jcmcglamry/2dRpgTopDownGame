@@ -10,9 +10,9 @@ import { InventoryManager } from "./utils/inventoryManger";
 export class Default extends Phaser.Scene {
     constructor(shareData) {
         super("Default");
-        this.startingPosition = { x: 200, y: 180 };
+        this.startingPosition = { x: 120, y: 90 };
         this.shareData = shareData
-       
+        
        
     }
 
@@ -20,7 +20,6 @@ export class Default extends Phaser.Scene {
         this.load.image('tiledImage', 'assets/MasterSimple.png');
         this.load.tilemapTiledJSON('tilemap', 'assets/map.json');
         this.load.spritesheet('player', 'assets/player.png', { frameWidth: 48, frameHeight: 48 });
-    
         this.load.json('items', 'assets/items.json')
         this.load.once('filecomplete-json-items', () => {
             let itemsData = this.cache.json.get('items');
@@ -31,10 +30,13 @@ export class Default extends Phaser.Scene {
             });
             
             this.load.start();
+            
         });
     }
 
     create() {
+        this.itemsData = this.cache.json.get('items')
+        let item = Phaser.Utils.Array.GetRandom(this.itemsData)
         const map = this.make.tilemap({ key: 'tilemap' });
         const tileset = map.addTilesetImage('MasterSimple', 'tiledImage');
         const mapWidthInPixels = map.width * map.tileWidth;
@@ -61,8 +63,7 @@ export class Default extends Phaser.Scene {
       
         
       
-        this.player = new Player(this, xOffset + this.startingPosition.x, yOffset + this.startingPosition.y, this.shareData);
-        this.health = this.player.health
+        this.player = new Player(this, xOffset + this.startingPosition.x, yOffset + this.startingPosition.y, this.shareData, this.lastDirection);
         this.physics.add.collider(this.player, this.treesTiles);
         this.treesTiles.setCollisionByExclusion([-1])
         this.physics.add.collider(this.player, this.landTiles);
@@ -77,11 +78,12 @@ export class Default extends Phaser.Scene {
        
         
        
-        this.updateInventoryDisplay = new updateInventoryDisplay(this, this.shareData, 80, 510);
+        this.updateInventoryDisplay = new updateInventoryDisplay(this, this.player, this.shareData, 80, 510);
+       
         this.inventoryManager = new InventoryManager(this, this.player, this.shareData, this.updateInventoryDisplay);
-        this.inventoryManager.createItem('carrot', 450,300)
-
-
+        this.inventoryManager.createItem(item.name, 450,300)
+       
+      
         if(this.shareData.isAvailable === true){
         this.inventoryManager.createItem('Sword', 430,300 )
         }
@@ -98,19 +100,27 @@ export class Default extends Phaser.Scene {
        
         }
         this.cameras.main.startFollow(this.player);
+   
+       
+        this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.KeyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+        this.KeyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
     }
 
     update() {
+       
         this.shareData.player.x = this.player.x;
         this.shareData.player.y = this.player.y;
         const cursors = this.input.keyboard.createCursorKeys();
-        this.player.update(cursors)
+        this.player.update(cursors, this.keySpace)
         this.runController.update();
         this.status.update();
         this.updateInventoryDisplay.update()
-       
-       
-
+         
+        
+        if (this.keySpace.isDown) {
+            this.player.anims.play('attack-' + this.player.lastDirection, true);
+        }
         const tile = this.houseTiles.getTileAtWorldXY(this.player.x, this.player.y);
 
         if (tile) {

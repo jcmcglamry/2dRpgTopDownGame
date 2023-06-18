@@ -5,7 +5,8 @@
         "attackPower": 50,
         "defensePower": 10,
         "type": "weapon",
-        "imagePath": "assets/Sword.png"
+        "imagePath": "assets/Sword.png",
+        "damage": 1
     },
     {
         "name": "Shield",
@@ -13,20 +14,23 @@
         "attackPower": 0,
         "defensePower": 50,
         "type": "armor",
-        "imagePath": "assets/Shield.png"
+        "imagePath": "assets/Shield.png",
+        "defense": 1
     },
     {
         "name": "potion",
         "description": "Heals your wounds and restores health.",
         "healPower": 100,
         "type": "consumable",
-        "imagePath": "assets/potion.png"
+        "imagePath": "assets/potion.png",
+        "health": 10
     },
     {
         "name": "carrot",
-        "description": "A tasty treat to improve how you feel",
+        "description": "A tasty treat to to put a pep in your step",
         "healPower":20,
         "type": "consumable",
-        "imagePath": "assets/carrot.png"
+        "imagePath": "assets/carrot.png",
+        "stamina" : 10
     }
 ]
